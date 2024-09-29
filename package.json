@@ -1,0 +1,11 @@
+{
+  "name": "datascript",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "datascript": "^1.7.3",
+    "jsedn": "^0.4.1"
+  }
+}
