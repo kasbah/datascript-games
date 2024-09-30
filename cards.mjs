@@ -1,6 +1,8 @@
 import d from "datascript";
 
-let db = d.db_with(d.empty_db(), [
+const schema = { ident: { ":db/unique": ":db.unique/identity" } };
+
+let db = d.db_with(d.empty_db(schema), [
   { "suit/name": "diamonds", "suit/value": 1 },
   { "suit/name": "hearts", "suit/value": 2 },
   { "suit/name": "spades", "suit/value": 3 },
@@ -24,7 +26,7 @@ let db = d.db_with(d.empty_db(), [
   { "player/name": "player1", "player/hand": [] },
   { "player/name": "player2", "player/hand": [] },
   { stages: ["initial", "playing", "finished"] },
-  { ":db/id": 1000, stage: "initial" },
+  { ident: "game_state", stage: "initial" },
 ]);
 
 const rules = `[
@@ -52,9 +54,38 @@ let result = d.q(`[:find ?stage :in $ % :where [_ "stage" ?stage]]`, db, rules);
 
 console.log(result);
 
+//const conn = d.create_conn(db, schema);
+
 const game_step = (db) => {
-  return [[":db/add", 1000, "stage", "playing"]];
+  const stage = d.q(
+    `[:find ?stage :in $ % :where [?game_state "ident" "game_state"] [?game_state "stage" ?stage]]`,
+    db,
+    rules,
+  )[0][0];
+  const stages = d.q(
+    `[:find ?stages :in $ % :where [_ "stages" ?stages]]`,
+    db,
+    rules,
+  )[0][0];
+  const next_stage_index = stages.indexOf(stage) + 1;
+  if (next_stage_index >= stages.length) {
+    return [];
+  }
+  const next_stage = stages[next_stage_index];
+  return [{ ident: "game_state", stage: next_stage }];
 };
+
+db = d.db_with(db, [[":db.fn/call", game_step]]);
+
+result = d.q(`[:find ?stage :in $ % :where [_ "stage" ?stage]]`, db, rules);
+
+console.log(result);
+
+db = d.db_with(db, [[":db.fn/call", game_step]]);
+
+result = d.q(`[:find ?stage :in $ % :where [_ "stage" ?stage]]`, db, rules);
+
+console.log(result);
 
 db = d.db_with(db, [[":db.fn/call", game_step]]);
 
