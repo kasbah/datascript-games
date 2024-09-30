@@ -21,8 +21,10 @@ let db = d.db_with(d.empty_db(), [
   { "pip/name": "king", "pip/value": 13 },
   { "pip/name": "ace", "pip/value": 14 },
 
-  {"player/name": "player1", "player/hand": []},
-  {"player/name": "player2", "player/hand": []},
+  { "player/name": "player1", "player/hand": [] },
+  { "player/name": "player2", "player/hand": [] },
+  { stages: ["initial", "playing", "finished"] },
+  { ":db/id": 1000, stage: "initial" },
 ]);
 
 const rules = `[
@@ -41,10 +43,21 @@ const rules = `[
   ]
 ]`;
 
-let result = d.q(
-  `[:find ?pip_name ?suit_name :in $ % :where (beats ?pip_name ?suit_name "queen" "hearts")]`,
-  db,
-  rules,
-);
+//let result = d.q(
+//  `[:find ?pip_name ?suit_name :in $ % :where (beats ?pip_name ?suit_name "queen" "hearts")]`,
+//  db,
+//  rules,
+//);
+let result = d.q(`[:find ?stage :in $ % :where [_ "stage" ?stage]]`, db, rules);
+
+console.log(result);
+
+const game_step = (db) => {
+  return [[":db/add", 1000, "stage", "playing"]];
+};
+
+db = d.db_with(db, [[":db.fn/call", game_step]]);
+
+result = d.q(`[:find ?stage :in $ % :where [_ "stage" ?stage]]`, db, rules);
 
 console.log(result);
