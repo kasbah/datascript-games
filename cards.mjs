@@ -23,31 +23,22 @@ let db = d.db_with(d.empty_db(), [
 ]);
 
 const rules = `[
-  [(card ?pip ?suit) [?pip ":pip/name"] [?suit ":suit/name"]]
+  [(card ?pip_name ?suit_name ?pip ?suit) [?pip ":pip/name" ?pip_name] [?suit ":suit/name" ?suit_name]]
+  [(beats ?pip1 ?suit1 ?pip2 ?suit2)
+    [?pip1 ":pip/value" ?pip_value1]
+    [?pip2 ":pip/value" ?pip_value2]
+    [?suit1 ":suit/value" ?suit_value1]
+    [?suit2 ":suit/value" ?suit_value2]
+    (or [(> ?pip_value1 ?pip_value2)]
+    [(> ?suit_value1 ?suit_value2)])
+  ]
 ]`;
 
 let result = d.q(
-  `[:find ?pn :where [?pip ":pip/value" 1] [?pip ":pip/name" ?pn] :in $ % :where (card ?pip ?suit)]`,
+  `[:find ?pip_name ?suit_name :in $ % :where (card "ace" "hearts" ?pip1 ?suit1) (card ?pip_name ?suit_name ?pip2 ?suit2) (beats ?pip1 ?suit1 ?pip2 ?suit2)]`,
+
   db,
   rules,
 );
 
 console.log(result);
-
-//var people_db = d.db_with(d.empty_db({ age: { ":db/index": true } }), [
-//  { ":db/id": 1, name: "Ivan", age: 15 },
-//  { ":db/id": 2, name: "Petr", age: 37 },
-//  { ":db/id": 3, name: "Ivan", age: 37 },
-//]);
-//
-//console.log(
-//  d.q(
-//    `[:find ?pip ?suit
-//        :in    $ %
-//        :where (card ?pip ?suit)]`,
-//    db,
-//    `[[(card ?pip ?suit)
-//       [?pip ":pip/name" ?pn]
-//       [?suit ":suit/name" ?sn]]]`
-//  ),
-//);
