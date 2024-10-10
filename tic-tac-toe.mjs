@@ -83,10 +83,16 @@ function step(db) {
     rules,
   );
   console.log({ facts });
+  const [[current]] = d.q(
+    `[:find ?current :in $ % :where [?current "ident" "current"]]`,
+    db,
+    rules,
+  );
+  console.log({ current });
 
   db = d.db_with(
     db,
-    facts.map(([id]) => ({ ":db/retract": { ident: "current", fact: id } })),
+    facts.map(([id]) => [":db/retract", current, "fact", id]),
   );
 
   return d.db_with(
@@ -95,22 +101,22 @@ function step(db) {
   );
 }
 
-
 logControl(db);
-console.log('----')
-console.log('1')
-console.log('----')
 
+console.log("----");
+console.log("1");
+console.log("----");
 db = step(db);
 logControl(db);
-console.log('----')
-console.log('2')
-console.log('----')
 
-
+console.log("----");
+console.log("2");
+console.log("----");
 db = step(db);
 logControl(db);
-console.log('----')
-console.log('3')
-console.log('----')
 
+console.log("----");
+console.log("3");
+console.log("----");
+db = step(db);
+logControl(db);
