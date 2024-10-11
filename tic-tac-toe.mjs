@@ -139,7 +139,9 @@ const rules = `[
     [?coord1 "name" ?key1] [?current ?key1 ?x]
     [?coord2 "name" ?key2] [?current ?key2 ?x]
   ]
-  [(line ?x) (or (row 0 ?x) (column 0 ?x) (row 1 ?x) (column 1 ?x) (row 2 ?x) (column 2 ?x) (diagonal ?x))]
+  [(line ?x) (row ?m ?x)]
+  [(line ?x) (column ?n ?x)]
+  [(line ?x) (diagonal ?x)]
   [(winner ?x) (line ?x) [(!= ?x "blank")]]
 ]`;
 
@@ -154,6 +156,7 @@ function findLegalMoves(db) {
 
 
 function makeMove(db, legalMoves) {
+  // just make a random legal move for now
   const moveId = legalMoves[Math.floor(Math.random() * legalMoves.length)];
   const move = toObj(d.entity(db, moveId));
   db = d.db_with(db, [{ ...move, ident: "current" }]);
