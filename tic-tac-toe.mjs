@@ -151,9 +151,8 @@ function findWinner(db) {
 
 function findLegalMoves(db) {
   const ids = d.q(`[:find ?legal :in $ % :where (legal ?legal)]`, db, rules);
-  return ids.map(([id]) => id)
+  return ids.map(([id]) => id);
 }
-
 
 function makeMove(db, legalMoves) {
   // just make a random legal move for now
@@ -175,23 +174,25 @@ function step(db) {
   return db;
 }
 
-let winner, draw;
-while (true) {
-  winner = findWinner(db);
-  if (winner) {
-    break;
+function main() {
+  let winner, draw;
+  while (true) {
+    winner = findWinner(db);
+    if (winner) {
+      break;
+    }
+    const legalMoves = findLegalMoves(db);
+    if (legalMoves.length === 0) {
+      draw = true;
+      break;
+    }
+    db = makeMove(db, legalMoves);
+    db = step(db);
+    logBoard(db);
   }
-  const legalMoves = findLegalMoves(db);
-  if (legalMoves.length === 0) {
-    draw = true;
-    break;
-  }
-  db = makeMove(db, legalMoves);
-  db = step(db);
-  logBoard(db);
-}
 
-console.log({ winner, draw });
+  console.log({ winner, draw });
+}
 
 function toObj(entity) {
   const entries = entity.entries();
@@ -235,3 +236,5 @@ function logBoard(db) {
   }
   console.log("-----");
 }
+
+main();
