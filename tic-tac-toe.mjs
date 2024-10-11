@@ -139,21 +139,13 @@ const rules = `[
     [?coord1 "name" ?key1] [?current ?key1 ?x]
     [?coord2 "name" ?key2] [?current ?key2 ?x]
   ]
-  [(line ?x) (or (row _ ?x) (column _ ?x) (diagonal ?x))]
+  [(line ?x) (or (row 0 ?x) (column 0 ?x) (row 1 ?x) (column 1 ?x) (row 2 ?x) (column 2 ?x) (diagonal ?x))]
+  [(winner ?x) (line ?x) [(!= ?x "blank")]]
 ]`;
-
-function logControl(db) {
-  const control = d.q(
-    `[:find ?control :in $ % :where [?current "ident" "current"] [?current "control" ?control]]`,
-    db,
-    rules,
-  );
-  console.log("control", JSON.stringify(control));
-}
 
 function step(db) {
   const winner = d.q(
-    `[:find ?x :in $ % :where (line ?x) [(!= ?x "blank")]]`,
+    `[:find ?x :in $ % :where (winner ?x)]`,
     db,
     rules,
   )[0]?.[0];
@@ -164,7 +156,6 @@ function step(db) {
 
   const moveId = legal[Math.floor(Math.random() * legal.length)][0];
   const move = toObj(d.entity(db, moveId));
-  console.log(move)
 
   db = d.db_with(db, [{ ...move, ident: "current" }]);
 
@@ -174,21 +165,20 @@ function step(db) {
     db,
     next.map(([id]) => {
       const entity = toObj(d.entity(db, id));
-      console.log(entity)
       return { ...entity, ident: "current" };
     }),
   );
-  
+
   return [winner, db];
 }
 
 let winner;
 while (!winner) {
   [winner, db] = step(db);
-  logControl(db);
+  logBoard(db);
 }
 
-console.log({winner});
+console.log({ winner });
 
 function toObj(entity) {
   const entries = entity.entries();
@@ -201,4 +191,29 @@ function toObj(entity) {
     i = entries.next();
   }
   return Object.fromEntries(arr);
+}
+
+function logBoard(db) {
+  const coords = d.q(
+    `[:find ?m ?n ?x :in $ % :where [?current "ident" "current"] [?coord ?type "coord"] [?coord "name" ?key] [?coord "m" ?m] [?coord "n" ?n] [?current ?key ?x]]`,
+    db,
+    rules,
+  );
+
+  const board = coords.reduce((acc, [m, n, x]) => {
+    if (x === "blank") {
+      x = " ";
+    }
+    if (!acc[m]) {
+      acc[m] = [];
+    }
+    acc[m][n] = x;
+    return acc;
+  }, []);
+  console.log("-----");
+  for (const row of board) {
+    console.log(row.join(" "));
+  }
+
+  console.log("-----");
 }
