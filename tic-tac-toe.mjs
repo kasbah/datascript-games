@@ -143,24 +143,20 @@ const rules = `[
   [(winner ?x) (line ?x) [(!= ?x "blank")]]
 ]`;
 
-function step(db) {
-  const winner = d.q(
-    `[:find ?x :in $ % :where (winner ?x)]`,
-    db,
-    rules,
-  )[0]?.[0];
-  if (winner) {
-    return [winner, db];
-  }
-  const legal = d.q(`[:find ?legal :in $ % :where (legal ?legal)]`, db, rules);
+function findWinner(db) {
+  return d.q(`[:find ?x :in $ % :where (winner ?x)]`, db, rules)[0]?.[0];
+}
 
+function makeMove(db) {
+  const legal = d.q(`[:find ?legal :in $ % :where (legal ?legal)]`, db, rules);
   const moveId = legal[Math.floor(Math.random() * legal.length)][0];
   const move = toObj(d.entity(db, moveId));
-
   db = d.db_with(db, [{ ...move, ident: "current" }]);
+  return db;
+}
 
+function step(db) {
   const next = d.q(`[:find ?next :in $ % :where (next ?next)]`, db, rules);
-
   db = d.db_with(
     db,
     next.map(([id]) => {
@@ -168,14 +164,15 @@ function step(db) {
       return { ...entity, ident: "current" };
     }),
   );
-
-  return [winner, db];
+  return db;
 }
 
 let winner;
 while (!winner) {
-  [winner, db] = step(db);
+  db = makeMove(db);
+  db = step(db);
   logBoard(db);
+  winner = findWinner(db);
 }
 
 console.log({ winner });
@@ -195,7 +192,13 @@ function toObj(entity) {
 
 function logBoard(db) {
   const coords = d.q(
-    `[:find ?m ?n ?x :in $ % :where [?current "ident" "current"] [?coord ?type "coord"] [?coord "name" ?key] [?coord "m" ?m] [?coord "n" ?n] [?current ?key ?x]]`,
+    `[:find ?m ?n ?x :in $ % :where 
+      [?current "ident" "current"] 
+      [?coord "type" "coord"] 
+      [?coord "name" ?key] 
+      [?coord "m" ?m]
+      [?coord "n" ?n] 
+      [?current ?key ?x]]`,
     db,
     rules,
   );
@@ -214,6 +217,5 @@ function logBoard(db) {
   for (const row of board) {
     console.log(row.join(" "));
   }
-
   console.log("-----");
 }
